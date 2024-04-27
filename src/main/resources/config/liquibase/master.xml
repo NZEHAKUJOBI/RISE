@@ -1,0 +1,41 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet id="20170503041524-1" author="Nzeh Daniel">
+        <createTable tableName="target_table">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="facility_id" type="integer">
+                <constraints nullable="false"/>
+            </column>
+            <column name="person_uuid" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="biometric_id" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+            <column name="biometric_data" type="bytea">
+                <constraints nullable="true"/>
+            </column>
+            <column name="enrollment_date" type="timestamp">
+                <constraints nullable="true"/>
+            </column>
+            <column name="template_type" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="archived" type="integer">
+                <constraints nullable="true"/>
+            </column>
+            <column name="recapture" type="integer">
+                <constraints nullable="true"/>
+            </column>
+            <column name="replacement_date" type="timestamp">
+                <constraints nullable="true"/>
+            </column>
+            <column name="match_status" type="varchar(255)">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>
