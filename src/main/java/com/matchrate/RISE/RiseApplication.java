@@ -11,6 +11,7 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import com.matchrate.RISE.etl.extraction.extractor;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 import java.util.Properties;
 
 @SpringBootApplication
@@ -29,6 +30,7 @@ public class RiseApplication {
 		SpringApplication.run(RiseApplication.class, args);
 		try {
 			extractor.performDataInsertion();
+
 		}
 		catch(Exception ex){
 			ex.printStackTrace();

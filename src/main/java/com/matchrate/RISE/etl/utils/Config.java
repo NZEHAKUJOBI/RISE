@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -23,38 +24,73 @@ public class Config {
     private static Map<String, String> externalProperties;
     private static final Logger logger = LoggerFactory.getLogger(Config.class);
 
+//    private static void initialize() {
+//        properties = new Properties();
+//        connectionParameters = new HashMap<>();
+//        customParameters = new HashMap<>();
+//        try {
+//            File resourceFile = new File(Constants.DEFAULT_PROPERTIES);
+//            String propertiesLink = resourceFile.exists() ? getExternalProperties().get("externalProperties") : Constants.DEFAULT_PROPERTIES;
+//            logger.info(resourceFile.exists()  ? String.format("External properties file %s was provided.", propertiesLink)
+//                    : String.format("No external properties file provided using default %s.", propertiesLink));
+//            if(resourceFile.exists()) {
+//                try (InputStream inputStream = Files.newInputStream(resourceFile.toPath())) {
+//                    properties.load(inputStream);
+//                }
+//            }else {
+//                ClassLoader classLoader = Config.class.getClassLoader();
+//                try (InputStream inputStream = classLoader.getResourceAsStream(propertiesLink)) {
+//                    properties.load(inputStream);
+//                }
+//            }
+//        } catch (IOException e) {
+//            System.err.println("Error reading properties file: " + e.getMessage());
+//        }
+//    }
+static {
+    initialize();
+}
+
     private static void initialize() {
-        properties = new Properties();
-        connectionParameters = new HashMap<>();
-        customParameters = new HashMap<>();
-        try {
-            File resourceFile = new File(Constants.DEFAULT_PROPERTIES);
-            String propertiesLink = resourceFile.exists() ? getExternalProperties().get("externalProperties") : Constants.DEFAULT_PROPERTIES;
-            logger.info(resourceFile.exists()  ? String.format("External properties file %s was provided.", propertiesLink)
-                    : String.format("No external properties file provided using default %s.", propertiesLink));
-            if(resourceFile.exists()) {
-                try (InputStream inputStream = Files.newInputStream(resourceFile.toPath())) {
+        if (properties == null) {
+            properties = new Properties();
+            connectionParameters = new HashMap<>();
+            try {
+                String propertiesLink = getPropertiesLink();
+                logger.info(resourceFileExists(propertiesLink) ?
+                        String.format("External properties file %s was provided.", propertiesLink) :
+                        String.format("No external properties file provided, using default %s.", propertiesLink));
+                try (InputStream inputStream = Files.newInputStream(Paths.get(propertiesLink))) {
                     properties.load(inputStream);
                 }
-            }else {
-                ClassLoader classLoader = Config.class.getClassLoader();
-                try (InputStream inputStream = classLoader.getResourceAsStream(propertiesLink)) {
-                    properties.load(inputStream);
-                }
+            } catch (Exception e) {
+                logger.error("Error reading properties file: {}", e.getMessage());
             }
-        } catch (IOException e) {
-            System.err.println("Error reading properties file: " + e.getMessage());
+            // Initialize connectionParameters here
+            connectionParameters = getConnectionParameters();
         }
     }
+
+    private static String getPropertiesLink() {
+        return resourceFileExists(Constants.DEFAULT_PROPERTIES) ?
+                Constants.DEFAULT_PROPERTIES :
+                Constants.DEFAULT_PROPERTIES; // Default to application.properties if external not found
+    }
+
+    private static boolean resourceFileExists(String fileName) {
+        return Files.exists(Paths.get(fileName));
+    }
+
 
     public static Connection connectToDatabase(String dbName) {
         initialize();
         String url = properties.getProperty("spring.datasource.url");
-        String user = properties.getProperty("spring.datasource.user");
+        String user = properties.getProperty("spring.datasource.username");
         String password = properties.getProperty("spring.datasource.password");
 
         if(dbName.equals(Constants.LAMISPLUS)){
             url = properties.getProperty("lamisplus.db.url");
+
             user = properties.getProperty("lamisplus.db.user");
             password = properties.getProperty("lamisplus.db.password");
         }
@@ -75,7 +111,7 @@ public class Config {
             initialize();
 
             String etlUrl = properties.getProperty("spring.datasource.url");
-            String etlUser = properties.getProperty("spring.datasource.user");
+            String etlUser = properties.getProperty("spring.datasource.username");
             String etlPassword = properties.getProperty("spring.datasource.password");
             String etlDBName = properties.getProperty("spring.datasource.name");
             String lamisPlusUrl = properties.getProperty("lamisplus.db.url");
@@ -83,6 +119,9 @@ public class Config {
             String lamisPlusPassword = properties.getProperty("lamisplus.db.password");
             String lamisPlusDBName = properties.getProperty("lamisplus.db.name");
             String projectStartDate = properties.getProperty("project.start.date");
+            String suspended = properties.getProperty("suspended");
+            String Commenced = properties.getProperty("commenced");
+
 
 
             connectionParameters.put("etlUrl", etlUrl);
@@ -94,6 +133,8 @@ public class Config {
             connectionParameters.put("lamisPlusPassword", lamisPlusPassword);
             connectionParameters.put("lamisPlusDBName", lamisPlusDBName);
             connectionParameters.put("projectStartDate", projectStartDate);
+            connectionParameters.put("suspended", suspended);
+            connectionParameters.put("Commenced", Commenced);
 
 
         }catch(Exception ex){
@@ -137,8 +178,11 @@ public class Config {
     public static class Constants {
 
         public static String biometric = "biometric";
-        public static String LAMISPLUS = "LAMISPlus";
+        public static String LAMISPLUS = "lamisplus";
 
-        public static String DEFAULT_PROPERTIES = "application.properties";
+//        public static String DEFAULT_PROPERTIES = "application.properties";
+        public static final String DEFAULT_PROPERTIES = "src/main/resources/application.properties";
+
+
     }
 }
