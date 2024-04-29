@@ -15,31 +15,28 @@ public class extractor {
 
     static Logger logger = LoggerFactory.getLogger(extractor.class);
 
-//    private static boolean dropML = false;
-
     public static void performDataInsertion() throws SQLException {
-        Connection biometric = null;
+        Connection biometricDB = null;
         Connection lamisPlusDB = null;
         try {
-            Map<String, String> connectionParameters = Config.getConnectionParameters();
             if(Config.getConnectionParameters().get("suspended").equals("false")) {
-//            if (connectionParameters != null && "false".equals(connectionParameters.get("suspended"))) {
-
                 logger.info(String.format("Starting Data Extraction at %s", new java.util.Date()));
 
-                biometric = Config.connectToDatabase(Config.Constants.biometric);
+                biometricDB = Config.connectToDatabase(Config.Constants.biometric);
                 lamisPlusDB = Config.connectToDatabase(Config.Constants.LAMISPLUS);
 
                 //Begin Data Extraction and Load
                 //TODO: Create a database table to hold the status of extractions ans runs...
-                dbLinks(lamisPlusDB, biometric);
+                dbLinks(lamisPlusDB, biometricDB);
+                // Call the insertBiometric method here
+                insertBiometric(biometricDB);
             }
         } catch(Exception ex) {
-            closeConnections(lamisPlusDB, biometric);
+            closeConnections(lamisPlusDB, biometricDB);
             ex.printStackTrace();
         }finally{
             if(lamisPlusDB != null) lamisPlusDB.close();
-            if(biometric != null) biometric.close();
+            if(biometricDB != null) biometricDB.close();
             if(Config.getConnectionParameters().get("suspended").equals("false"))
                 logger.info(String.format("Finished Data Extraction at %s", new java.util.Date()));
             else
@@ -48,7 +45,7 @@ public class extractor {
 
 
 
-    } private static void dbLinks (Connection lamisPlusDB, Connection biometric){
+    } private static void dbLinks (Connection lamisPlusDB, Connection etlDB){
         Statement lamisPlusStatement = null, etlStatement = null;
 
         try {
@@ -58,15 +55,14 @@ public class extractor {
             String user = databaseCredentials.get("etlUser"); //TODO: We can create an environmental variable separately for this
             String password = databaseCredentials.get("etlPassword"); //TODO: We can create an environmental variable separately for this
             String hostAddr = "127.0.0.1";
-            String clientMgtDBName = databaseCredentials.get("etlDBName");
+            String etlDBName = databaseCredentials.get("etlDBName");
             String lamisPlusDBName = databaseCredentials.get("lamisPlusDBName");
 
             lamisPlusStatement = lamisPlusDB.createStatement();
-//            lamisPlusStatement.executeUpdate(Queries.DBLinks.DROP_DBLINK);
-            lamisPlusStatement.execute(Queries.DBLinks.createLamiplusDbLink(hostname,  port,  user,  password,  clientMgtDBName,  hostAddr));
+            lamisPlusStatement.execute(Queries.DBLinks.createLamiplusDbLink(hostname,  port,  user,  password,   etlDBName,  hostAddr));
 
-            etlStatement = biometric.createStatement();
-            etlStatement.execute(Queries.DBLinks.createetlDblink(hostname,  port,  user,  password,  lamisPlusDBName ,  hostAddr));
+            etlStatement =  etlDB.createStatement();
+            etlStatement.execute(Queries.DBLinks.createEtlDblink(hostname,  port,  user,  password,  lamisPlusDBName ,  hostAddr));
 
             //Call Next Ite
             logger.info("DB Links closed successfully...");
@@ -77,13 +73,13 @@ public class extractor {
             e.printStackTrace();
         }
     }
-    private static void insertBiometric(Connection biometric)  throws SQLException{
+      public static void insertBiometric(Connection biometric)  throws SQLException{
         Statement etlStatement = null;
         try {
 
             etlStatement = biometric.createStatement();
             etlStatement.executeUpdate(Queries.biometric.biometric_QUERY);
-            logger.info("Inserting users");
+            logger.info("Inserting biometric");
 
             //Call Next Item
             logger.info("Users Data Transfer completely Done...");
